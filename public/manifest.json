@@ -1,0 +1,25 @@
+{
+    "manifest_version": 3,
+    "name": "Tabganiser",
+    "version": "1.0.0",
+    "description": "Organize your tabs with ease.",
+    "action": {
+        "default_popup": "index.html"
+    },
+    "background": {
+        "service_worker": "service-worker.js",
+        "type": "module"
+    },
+    "chrome_url_overrides": {
+        "newtab": "newtab.html"
+    },
+    "host_permissions": ["https://api.open-meteo.com/*"],
+    "permissions": ["topSites", "favicon", "geolocation"],
+    "web_accessible_resources": [
+        {
+            "resources": ["_favicon/*"],
+            "matches": ["<all_urls>"],
+            "extension_ids": ["*"]
+        }
+    ]
+}
