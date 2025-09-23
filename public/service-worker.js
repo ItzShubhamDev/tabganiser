@@ -3,6 +3,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         chrome.topSites.get((sites) => {
             sendResponse(sites);
         });
-        return true; // keep the messaging channel open for async response
+        return true;
+    } else if (request === "getBookmarks") {
+        chrome.bookmarks.getRecent(10, (bookmarkTreeNodes) => {
+            sendResponse(bookmarkTreeNodes);
+        });
+        return true;
     }
 });

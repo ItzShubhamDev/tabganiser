@@ -14,7 +14,7 @@
         "newtab": "newtab.html"
     },
     "host_permissions": ["https://api.open-meteo.com/*"],
-    "permissions": ["topSites", "favicon", "geolocation"],
+    "permissions": ["topSites", "favicon", "bookmarks"],
     "web_accessible_resources": [
         {
             "resources": ["_favicon/*"],

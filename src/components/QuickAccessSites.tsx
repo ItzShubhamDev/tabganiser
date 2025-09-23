@@ -1,4 +1,4 @@
-import QuickAccessLink from "./QuickAccessLink";
+import Link from "./Link";
 import { useEffect, useState } from "react";
 
 type Site = {
@@ -30,12 +30,13 @@ export default function QuickAccessSites() {
     }, []);
 
     return (
-        <div className="mx-8 flex flex-col space-y-6 items-center justify-center">
+        <div className="mx-8 flex flex-col items-center justify-center">
             {sites.slice(0, 6).map((site) => (
-                <QuickAccessLink
+                <Link
                     key={site.url}
                     title={site.title}
                     url={site.url}
+                    type="quickaccess"
                 />
             ))}
         </div>
