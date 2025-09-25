@@ -13,7 +13,6 @@
     "chrome_url_overrides": {
         "newtab": "newtab.html"
     },
-    "host_permissions": ["https://api.open-meteo.com/*"],
     "permissions": ["topSites", "favicon", "bookmarks"],
     "web_accessible_resources": [
         {

@@ -17,7 +17,7 @@ export default function QuickAccessSites() {
             const defaultSites = [
                 { title: "GitHub", url: "https://github.com" },
                 { title: "Gmail", url: "https://gmail.com" },
-                { title: "YouTube", url: "https://youtube.com" },
+                { title: "Discord", url: "https://discord.com" },
                 { title: "Stack Overflow", url: "https://stackoverflow.com" },
                 { title: "Reddit", url: "https://reddit.com" },
             ];
@@ -30,7 +30,7 @@ export default function QuickAccessSites() {
     }, []);
 
     return (
-        <div className="mx-8 flex flex-col items-center justify-center">
+        <div className="ml-2 flex flex-col items-center justify-center h-[calc(100%-30px)] bg-gray-200/10 rounded-xl ">
             {sites.slice(0, 6).map((site) => (
                 <Link
                     key={site.url}

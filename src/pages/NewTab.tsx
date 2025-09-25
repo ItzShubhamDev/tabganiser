@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import BackgroundGradient from "../components/Background";
 import { FaSearch } from "react-icons/fa";
 import QuickAccessSites from "../components/QuickAccessSites";
 import Link from "../components/Link";
+import { FaGoogle } from "react-icons/fa6";
 
 export default function NewTab() {
     const [time, setTime] = useState(new Date());
@@ -14,6 +14,21 @@ export default function NewTab() {
     const [bookmarks, setBookmarks] = useState<
         chrome.bookmarks.BookmarkTreeNode[]
     >([]);
+    const [searchEngine, setSearchEngine] = useState(
+        "https://www.google.com/search?q="
+    );
+
+    const searchEngines = [
+        { id: "b", name: "Bing", url: "https://www.bing.com/search?q=" },
+        { id: "br", name: "Brave", url: "https://search.brave.com/search?q=" },
+        { id: "g", name: "Google", url: "https://www.google.com/search?q=" },
+        { id: "d", name: "DuckDuckGo", url: "https://duckduckgo.com/?q=" },
+        {
+            id: "sp",
+            name: "Startpage",
+            url: "https://www.startpage.com/do/search?q=",
+        },
+    ];
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -32,6 +47,13 @@ export default function NewTab() {
     }, []);
 
     useEffect(() => {
+        const defaultEngine = localStorage.getItem("defaultSearchEngine");
+        if (defaultEngine) {
+            const engine = searchEngines.find((e) => e.id === defaultEngine);
+            if (engine) {
+                setSearchEngine(engine.url);
+            }
+        }
         chrome.runtime.sendMessage("getTopSites", (sites) => {
             setTopSites(sites);
         });
@@ -47,11 +69,10 @@ export default function NewTab() {
     }
 
     return (
-        <div className="w-full h-screen flex justify-center overflow-hidden">
-            <BackgroundGradient />
+        <div className="w-full h-full flex justify-center items-center overflow-hidden relative">
             <QuickAccessSites />
-            <div className="flex flex-col justify-between w-full relative">
-                <div className="flex flex-col items-center mt-32">
+            <div className="flex flex-col justify-center w-full h-full relative">
+                <div className="flex flex-col items-center">
                     <span className="text-2xl text-gray-200">{greeting}</span>
                     <span className="text-6xl text-gray-100 mt-12">
                         {formatTime(time)}
@@ -74,25 +95,26 @@ export default function NewTab() {
                             ) {
                                 window.location.href = query;
                             } else {
-                                window.location.href = `https://www.google.com/search?q=${encodeURIComponent(
+                                window.location.href = `${searchEngine}${encodeURIComponent(
                                     query
                                 )}`;
                             }
                         }}
-                        className="w-xl mt-12 flex justify-start items-center bg-gray-200 border border-gray-300 py-4 px-4 rounded-full"
+                        className="w-xl mt-12 flex justify-start items-center bg-gray-200 border border-gray-300 py-4 px-6 rounded-full"
                     >
-                        <FaSearch className="left-1/2 text-gray-400 mr-4 text-lg" />
+                        <FaSearch className="left-1/2 text-gray-400 mr-4 text-xl" />
                         <input
                             type="text"
-                            placeholder="Search or enter address"
+                            placeholder="Imagine, search..."
                             className="text-xl outline-none bg-transparent w-full"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                         />
+                        <FaGoogle className="right-1/2 text-gray-400 ml-4 text-xl" />
                     </form>
                 </div>
                 {bookmarks.length > 0 && (
-                    <div className="w-full flex items-center justify-center mb-5">
+                    <div className="w-[calc(100%-16px)] mx-2 flex items-center justify-center absolute bottom-4 bg-gray-200/10 rounded-xl">
                         {bookmarks.map((bookmark) => (
                             <Link
                                 key={bookmark.id}
@@ -104,7 +126,7 @@ export default function NewTab() {
                     </div>
                 )}
             </div>
-            <div className="mx-8 flex flex-col items-center justify-center">
+            <div className="mr-2 flex flex-col items-center justify-center bg-gray-200/10 rounded-xl h-[calc(100%-30px)]">
                 {topSites.slice(0, 6).map((site) => (
                     <Link
                         key={site.url}
