@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { faviconURL } from "../lib";
 
 export default function Link({
     title,
@@ -10,13 +11,6 @@ export default function Link({
     type: "bookmark" | "topsite" | "quickaccess";
 }) {
     const [imgError, setImgError] = useState(false);
-
-    function faviconURL(u: string) {
-        const url = new URL(chrome.runtime.getURL("/_favicon/"));
-        url.searchParams.set("pageUrl", u);
-        url.searchParams.set("size", "32");
-        return url.toString();
-    }
 
     const translateCss =
         type === "topsite"

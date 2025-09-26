@@ -54,12 +54,23 @@ export default function NewTab() {
                 setSearchEngine(engine.url);
             }
         }
-        chrome.runtime.sendMessage("getTopSites", (sites) => {
-            setTopSites(sites);
-        });
-        chrome.runtime.sendMessage("getBookmarks", (bookmarks) => {
-            setBookmarks(bookmarks);
-        });
+        chrome.runtime.sendMessage(
+            {
+                action: "getTopSites",
+            },
+            (sites) => {
+                setTopSites(sites);
+            }
+        );
+        chrome.runtime.sendMessage(
+            {
+                action: "getBookmarks",
+                limit: 12,
+            },
+            (bookmarks) => {
+                setBookmarks(bookmarks);
+            }
+        );
     }, []);
 
     function formatTime(date: Date) {
@@ -71,7 +82,7 @@ export default function NewTab() {
     return (
         <div className="w-full h-full flex justify-center items-center overflow-hidden relative">
             <QuickAccessSites />
-            <div className="flex flex-col justify-center w-full h-full relative">
+            <div className="flex flex-col justify-center w-full h-full relative -mt-16">
                 <div className="flex flex-col items-center">
                     <span className="text-2xl text-gray-200">{greeting}</span>
                     <span className="text-6xl text-gray-100 mt-12">
@@ -114,7 +125,7 @@ export default function NewTab() {
                     </form>
                 </div>
                 {bookmarks.length > 0 && (
-                    <div className="w-[calc(100%-16px)] mx-2 flex items-center justify-center absolute bottom-4 bg-gray-200/10 rounded-xl">
+                    <div className="w-full mx-2 flex items-center justify-center absolute -bottom-4">
                         {bookmarks.map((bookmark) => (
                             <Link
                                 key={bookmark.id}
@@ -126,7 +137,7 @@ export default function NewTab() {
                     </div>
                 )}
             </div>
-            <div className="mr-2 flex flex-col items-center justify-center bg-gray-200/10 rounded-xl h-[calc(100%-30px)]">
+            <div className="mr-2 flex flex-col items-center justify-center h-full">
                 {topSites.slice(0, 6).map((site) => (
                     <Link
                         key={site.url}

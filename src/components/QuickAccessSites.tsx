@@ -30,7 +30,7 @@ export default function QuickAccessSites() {
     }, []);
 
     return (
-        <div className="ml-2 flex flex-col items-center justify-center h-[calc(100%-30px)] bg-gray-200/10 rounded-xl ">
+        <div className="ml-2 flex flex-col items-center justify-center h-full">
             {sites.slice(0, 6).map((site) => (
                 <Link
                     key={site.url}
