@@ -1,30 +1,32 @@
-import { FaStar } from "react-icons/fa6";
+import { FaClock } from "react-icons/fa6";
 import Category from "../components/Category";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { faviconURL } from "../lib";
 
 type SortedHistory = Record<number, chrome.history.HistoryItem[]>;
 
 export default function History() {
+    const [loading, setLoading] = useState<boolean>(false);
     const [history, setHistory] = useState<chrome.history.HistoryItem[]>([]);
-    const [sortedHistory, setSortedHistory] = useState<SortedHistory>({});
     const [endtime, setEndtime] = useState<number>(Date.now());
     const [more, setMore] = useState<boolean>(true);
     const ref = useRef<HTMLDivElement>(null);
 
-    const fetchHistory = () => {
-        if (!more) return;
+    const fetchHistory = useCallback(() => {
+        if (!more || loading) return;
 
+        setLoading(true);
         chrome.runtime.sendMessage(
             {
                 action: "getHistory",
                 startTime: 0,
                 endTime: endtime,
-                maxResults: 300,
+                maxResults: 100,
             },
             (items: chrome.history.HistoryItem[]) => {
                 if (items.length === 0) {
                     setMore(false);
+                    setLoading(false);
                     return;
                 }
 
@@ -37,9 +39,41 @@ export default function History() {
                 );
 
                 setEndtime(oldest - 1);
+                setLoading(false);
             }
         );
-    };
+    }, [endtime, more, loading]);
+
+    const sortedHistory = useMemo(() => {
+        const newSortedHistory: SortedHistory = {};
+
+        for (let i = 1; i < history.length; i++) {
+            const item = history[i];
+            if (!item.lastVisitTime) continue;
+
+            const date = new Date(item.lastVisitTime);
+            date.setHours(0, 0, 0, 0);
+            const timestamp = date.getTime();
+
+            if (newSortedHistory[timestamp]) {
+                if (
+                    !newSortedHistory[timestamp].some((it) => it.id === item.id)
+                ) {
+                    newSortedHistory[timestamp].push(item);
+                }
+            } else {
+                newSortedHistory[timestamp] = [item];
+            }
+        }
+
+        return newSortedHistory;
+    }, [history]);
+
+    const sortedTimestamps = useMemo(() => {
+        return Object.keys(sortedHistory)
+            .map(Number)
+            .sort((a, b) => b - a);
+    }, [sortedHistory]);
 
     useEffect(() => {
         fetchHistory();
@@ -48,7 +82,6 @@ export default function History() {
     useEffect(() => {
         if (!ref.current) return;
         const div = ref.current;
-        console.log("Setting up scroll listener");
 
         const handleScroll = () => {
             const { scrollTop, scrollHeight, clientHeight } = div;
@@ -57,37 +90,26 @@ export default function History() {
             }
         };
 
-        div.addEventListener("scroll", handleScroll);
-        return () => div.removeEventListener("scroll", handleScroll);
-    }, [endtime, more]);
-
-    useEffect(() => {
-        const newSortedHistory: { [key: number]: typeof history } = {};
-
-        for (let i = 1; i < history.length; i++) {
-            const item = history[i];
-            const date = new Date(item.lastVisitTime!);
-            date.setHours(0, 0, 0, 0);
-            const timestamp = date.getTime();
-
-            if (newSortedHistory[timestamp]) {
-                newSortedHistory[timestamp].push(item);
-            } else {
-                newSortedHistory[timestamp] = [item];
+        let ticking = false;
+        const throttledScroll = () => {
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    handleScroll();
+                    ticking = false;
+                });
+                ticking = true;
             }
-        }
+        };
 
-        setSortedHistory((prev) => ({
-            ...prev,
-            ...newSortedHistory,
-        }));
-    }, [history]);
+        div.addEventListener("scroll", throttledScroll, { passive: true });
+        return () => div.removeEventListener("scroll", throttledScroll);
+    }, [fetchHistory]);
 
     return (
         <div className="flex items-center h-full px-2 pt-4 pb-2">
             <div className="w-72 h-full flex flex-col bg-gray-200/10 rounded-xl pt-8">
                 <h1 className="w-full flex justify-center items-center text-2xl text-white font-semibold">
-                    <FaStar className="mr-2 text-yellow-400" />
+                    <FaClock className="mr-2 text-cyan-400" />
                     History
                 </h1>
                 <div className="w-full flex flex-col mt-4 px-6">
@@ -111,26 +133,16 @@ export default function History() {
                     </p>
                 ) : (
                     <>
-                        {Object.keys(sortedHistory)
-                            .sort((a, b) => Number(b) - Number(a))
-                            .map((time) => (
-                                <div key={time} className="w-full">
-                                    <h2 className="text-gray-400 font-semibold mb-2">
-                                        {new Date(
-                                            Number(time)
-                                        ).toLocaleDateString([], {
-                                            year: "numeric",
-                                            month: "long",
-                                            day: "numeric",
-                                        })}
-                                    </h2>
-                                    <div className="space-y-1">
-                                        {datedHistory(
-                                            sortedHistory[Number(time)]
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
+                        {sortedTimestamps.map((timestamp) => (
+                            <DateSection
+                                key={timestamp}
+                                timestamp={timestamp}
+                                items={sortedHistory[timestamp]}
+                            />
+                        ))}
+                        {loading && (
+                            <p className="text-gray-400">Loading more...</p>
+                        )}
                     </>
                 )}
             </div>
@@ -138,36 +150,66 @@ export default function History() {
     );
 }
 
-const datedHistory = (history: chrome.history.HistoryItem[]) => {
+const DateSection = ({
+    timestamp,
+    items,
+}: {
+    timestamp: number;
+    items: chrome.history.HistoryItem[];
+}) => {
+    const formattedDate = useMemo(() => {
+        return new Date(timestamp).toLocaleDateString([], {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
+    }, [timestamp]);
+
+    const sortedItems = useMemo(() => {
+        return items.sort(
+            (a, b) => (b.lastVisitTime || 0) - (a.lastVisitTime || 0)
+        );
+    }, [items]);
+
     return (
-        <>
-            {history.map((history, i) => (
-                <a
-                    className="w-full flex hover:bg-gray-200/20 py-2 px-4 items-center rounded-lg transition-colors duration-200 ease-in-out"
-                    key={i}
-                    href={history.url}
-                    target="_blank"
-                >
-                    {history.lastVisitTime && (
-                        <p className="w-fit text-gray-400 mr-4 text-sm">
-                            {new Date(history.lastVisitTime).toLocaleString(
-                                [],
-                                {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                }
-                            )}
-                        </p>
-                    )}
-                    <img
-                        className="w-6 h-6 mr-4"
-                        src={faviconURL(history.url || "")}
-                    />
-                    <p className="flex-1 truncate">
-                        {history.title || history.url}
-                    </p>
-                </a>
-            ))}
-        </>
+        <div className="w-full">
+            <h2 className="text-gray-200 font-semibold mb-2">
+                {formattedDate}
+            </h2>
+            <div className="space-y-1">
+                {sortedItems.map((item, i) => (
+                    <HistoryItem key={`${item.id}-${i}`} item={item} />
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const HistoryItem = ({ item }: { item: chrome.history.HistoryItem }) => {
+    const formattedTime = useMemo(() => {
+        if (!item.lastVisitTime) return "";
+        return new Date(item.lastVisitTime).toLocaleString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    }, [item.lastVisitTime]);
+
+    const favicon = useMemo(() => faviconURL(item.url || ""), [item.url]);
+
+    return (
+        <a
+            className="w-full flex hover:bg-gray-200/20 py-2 px-4 items-center rounded-lg transition-colors duration-200 ease-in-out"
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            {item.lastVisitTime && (
+                <p className="w-fit text-gray-300 mr-4 text-sm">
+                    {formattedTime}
+                </p>
+            )}
+            <img className="w-6 h-6 mr-4" src={favicon} alt="" loading="lazy" />
+            <p className="flex-1 truncate">{item.title || item.url}</p>
+        </a>
     );
 };
