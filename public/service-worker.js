@@ -15,5 +15,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse(bookmarkTreeNodes);
         });
         return true;
+    } else if (request.action === "getHistory") {
+        chrome.history.search(
+            {
+                text: "",
+                startTime: request.startTime || 0,
+                endTime: request.endTime || Date.now(),
+                maxResults: request.maxResults || 100,
+            },
+            (historyItems) => {
+                sendResponse(historyItems);
+            }
+        );
+        return true;
     }
 });

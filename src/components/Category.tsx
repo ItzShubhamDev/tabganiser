@@ -44,7 +44,7 @@ const iconMap = {
     },
 };
 
-export default function BookmarksCategory({
+export default function Category({
     title,
     category,
 }: {

@@ -13,7 +13,7 @@
     "chrome_url_overrides": {
         "newtab": "newtab.html"
     },
-    "permissions": ["topSites", "favicon", "bookmarks"],
+    "permissions": ["topSites", "favicon", "bookmarks", "history"],
     "web_accessible_resources": [
         {
             "resources": ["_favicon/*"],

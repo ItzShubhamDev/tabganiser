@@ -3,6 +3,7 @@ import BackgroundGradient from "../components/Background";
 import Header from "../components/Header";
 import Bookmarks from "./BookMarks";
 import NewTab from "./NewTab";
+import History from "./History";
 
 export default function Layout() {
     const [active, setActive] = useState<"newtab" | "bookmarks" | "history">(
@@ -18,9 +19,7 @@ export default function Layout() {
             ) : active === "bookmarks" ? (
                 <Bookmarks />
             ) : (
-                <div className="mx-8 flex items-center">
-                    <h1>History</h1>
-                </div>
+                <History />
             )}
         </div>
     );

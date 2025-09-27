@@ -1,5 +1,5 @@
 import { FaStar } from "react-icons/fa6";
-import BookmarksCategory from "../components/BookmarksCategory";
+import Category from "../components/Category";
 import { useEffect, useState } from "react";
 import { faviconURL } from "../lib";
 
@@ -29,17 +29,14 @@ export default function Bookmarks() {
                     Bookmarks
                 </h1>
                 <div className="w-full flex flex-col mt-4 px-6">
-                    <BookmarksCategory title="Work" category="work" />
-                    <BookmarksCategory
-                        title="Entertainment"
-                        category="entertainment"
-                    />
-                    <BookmarksCategory title="Social" category="social" />
-                    <BookmarksCategory title="News" category="news" />
-                    <BookmarksCategory title="Shopping" category="shopping" />
-                    <BookmarksCategory title="Tech" category="tech" />
-                    <BookmarksCategory title="Tools" category="tools" />
-                    <BookmarksCategory title="Others" category="others" />
+                    <Category title="Work" category="work" />
+                    <Category title="Entertainment" category="entertainment" />
+                    <Category title="Social" category="social" />
+                    <Category title="News" category="news" />
+                    <Category title="Shopping" category="shopping" />
+                    <Category title="Tech" category="tech" />
+                    <Category title="Tools" category="tools" />
+                    <Category title="Others" category="others" />
                 </div>
             </div>
             <div className="ml-4 pr-8 flex-1 space-y-2 h-full flex flex-col items-center overflow-y-scroll text-lg text-white bg-gray-200/10 rounded-xl p-4">
