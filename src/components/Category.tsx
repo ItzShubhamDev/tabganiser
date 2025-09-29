@@ -49,11 +49,13 @@ export default function Category({
     category,
     onClick,
     active = false,
+    length,
 }: {
     title: string;
     category: keyof typeof iconMap;
     onClick?: () => void;
     active?: boolean;
+    length?: number;
 }) {
     return (
         <div
@@ -63,7 +65,9 @@ export default function Category({
             onClick={onClick}
         >
             <div>{iconMap[category].icon || <FaBox />}</div>
-            <h1 className="text-lg font-semibold">{title}</h1>
+            <h1 className="text-lg font-semibold">
+                {title} {length && `- ${length}`}
+            </h1>
         </div>
     );
 }
