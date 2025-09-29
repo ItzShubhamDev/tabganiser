@@ -1,6 +1,6 @@
 import { FaStar } from "react-icons/fa6";
 import Category from "../components/Category";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { faviconURL } from "../lib";
 
 const categories = [
@@ -22,6 +22,8 @@ export default function Bookmarks() {
         Record<string, string>
     >({});
     const [category, setCategory] = useState<string | null>();
+    const processedIndexRef = useRef<number>(0);
+    const isProcessingRef = useRef<boolean>(false);
 
     useEffect(() => {
         chrome.runtime.sendMessage(
@@ -37,29 +39,42 @@ export default function Bookmarks() {
 
     useEffect(() => {
         const getCategory = async () => {
+            if (isProcessingRef.current) return;
+            isProcessingRef.current = true;
+
             const categories = JSON.parse(
                 localStorage.getItem("categories") || "{}"
             ) as Record<string, string>;
 
             let count = 0;
-            for (const bookmark of bookmarks) {
-                if (!bookmark.url) continue;
-                const url = new URL(bookmark.url);
-                const hostname = url.hostname;
+            const startIndex = processedIndexRef.current;
 
-                const category = categories ? categories[hostname] : null;
+            for (let i = startIndex; i < bookmarks.length; i++) {
+                const bookmark = bookmarks[i];
+                if (!bookmark.url) {
+                    processedIndexRef.current = i + 1;
+                    continue;
+                }
 
-                if (category) {
-                    setBookmarkCategory((prev) => ({
-                        ...prev,
-                        [hostname]: category,
-                    }));
-                } else {
-                    if (count >= 13) {
-                        setTimeout(getCategory, 60000);
-                        break;
-                    }
-                    try {
+                try {
+                    const url = new URL(bookmark.url);
+                    const hostname = url.hostname;
+
+                    const category = categories ? categories[hostname] : null;
+
+                    if (category) {
+                        setBookmarkCategory((prev) => ({
+                            ...prev,
+                            [hostname]: category,
+                        }));
+                        processedIndexRef.current = i + 1;
+                    } else {
+                        if (count >= 9) {
+                            isProcessingRef.current = false;
+                            setTimeout(getCategory, 60000);
+                            return;
+                        }
+
                         const res = await fetch(
                             "http://localhost:3000/category",
                             {
@@ -71,24 +86,36 @@ export default function Bookmarks() {
                             }
                         );
 
-                        if (!res.ok) continue;
+                        if (res.ok) {
+                            const data = await res.json();
+                            const category = data.category as string;
+                            categories[hostname] = category;
+                            setBookmarkCategory((prev) => ({
+                                ...prev,
+                                [hostname]: category,
+                            }));
+                            localStorage.setItem(
+                                "categories",
+                                JSON.stringify(categories)
+                            );
+                        }
 
-                        const data = await res.json();
-
-                        const category = data.category as string;
-                        categories[hostname] = category;
-                    } catch (error) {
-                        console.error("Failed to fetch category:", error);
+                        count++;
+                        processedIndexRef.current = i + 1;
                     }
-                    count++;
+                } catch (error) {
+                    console.error("Failed to fetch category:", error);
+                    processedIndexRef.current = i + 1;
                 }
             }
 
-            setBookmarkCategory((prev) => ({ ...prev, ...categories }));
             localStorage.setItem("categories", JSON.stringify(categories));
+            isProcessingRef.current = false;
         };
 
-        getCategory();
+        if (bookmarks.length > 0) {
+            getCategory();
+        }
     }, [bookmarks]);
 
     const filteredBookmarks = useMemo(() => {
