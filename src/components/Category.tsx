@@ -47,13 +47,20 @@ const iconMap = {
 export default function Category({
     title,
     category,
+    onClick,
+    active = false,
 }: {
     title: string;
     category: keyof typeof iconMap;
+    onClick?: () => void;
+    active?: boolean;
 }) {
     return (
         <div
-            className={`w-full h-full flex text-2xl items-center my-2 p-2 space-x-4 bg-gray-200/10 rounded-lg hover:scale-110 transition-transform ease-in-out duration-100 ${iconMap[category].color}`}
+            className={`w-full h-full flex text-2xl items-center my-2 p-2 space-x-4 bg-gray-200/10 rounded-lg hover:scale-110 transition-transform ease-in-out duration-100 ${
+                iconMap[category].color
+            } ${active ? "bg-gray-200/20 scale-110" : "cursor-pointer"}`}
+            onClick={onClick}
         >
             <div>{iconMap[category].icon || <FaBox />}</div>
             <h1 className="text-lg font-semibold">{title}</h1>

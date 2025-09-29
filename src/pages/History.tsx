@@ -5,12 +5,28 @@ import { faviconURL } from "../lib";
 
 type SortedHistory = Record<number, chrome.history.HistoryItem[]>;
 
+const categories = [
+    "work",
+    "entertainment",
+    "social",
+    "news",
+    "shopping",
+    "tech",
+    "tools",
+    "others",
+];
+
 export default function History() {
     const [loading, setLoading] = useState<boolean>(false);
     const [history, setHistory] = useState<chrome.history.HistoryItem[]>([]);
+    const [historyCategory, setHistoryCategory] = useState<
+        Record<string, string>
+    >({});
+
     const [endtime, setEndtime] = useState<number>(Date.now());
     const [more, setMore] = useState<boolean>(true);
     const ref = useRef<HTMLDivElement>(null);
+    const [category, setCategory] = useState<string | null>();
 
     const fetchHistory = useCallback(() => {
         if (!more || loading) return;
@@ -105,6 +121,62 @@ export default function History() {
         return () => div.removeEventListener("scroll", throttledScroll);
     }, [fetchHistory]);
 
+    useEffect(() => {
+        const getCategory = async () => {
+            const categories = JSON.parse(
+                localStorage.getItem("categories") || "{}"
+            ) as Record<string, string>;
+
+            let count = 0;
+            for (const item of history) {
+                if (!item.url) continue;
+                const url = new URL(item.url);
+                const hostname = url.hostname;
+
+                const category = categories ? categories[hostname] : null;
+
+                if (category) {
+                    setHistoryCategory((prev) => ({
+                        ...prev,
+                        [hostname]: category,
+                    }));
+                } else {
+                    if (count >= 13) {
+                        setTimeout(getCategory, 60000);
+                        break;
+                    }
+                    try {
+                        const res = await fetch(
+                            "http://localhost:3000/category",
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({ url: item.url }),
+                            }
+                        );
+
+                        if (!res.ok) continue;
+
+                        const data = await res.json();
+
+                        const category = data.category as string;
+                        categories[hostname] = category;
+                    } catch (error) {
+                        console.error("Failed to fetch category:", error);
+                    }
+                    count++;
+                }
+            }
+
+            setHistoryCategory((prev) => ({ ...prev, ...categories }));
+            localStorage.setItem("categories", JSON.stringify(categories));
+        };
+
+        getCategory();
+    }, [history]);
+
     return (
         <div className="flex items-center h-full px-2 pt-4 pb-2">
             <div className="w-72 h-full flex flex-col bg-gray-200/10 rounded-xl pt-8">
@@ -113,14 +185,27 @@ export default function History() {
                     History
                 </h1>
                 <div className="w-full flex flex-col mt-4 px-6">
-                    <Category title="Work" category="work" />
-                    <Category title="Entertainment" category="entertainment" />
-                    <Category title="Social" category="social" />
-                    <Category title="News" category="news" />
-                    <Category title="Shopping" category="shopping" />
-                    <Category title="Tech" category="tech" />
-                    <Category title="Tools" category="tools" />
-                    <Category title="Others" category="others" />
+                    {categories.map((cat) => (
+                        <Category
+                            title={cat.charAt(0).toUpperCase() + cat.slice(1)}
+                            category={
+                                cat as
+                                    | "work"
+                                    | "entertainment"
+                                    | "social"
+                                    | "news"
+                                    | "shopping"
+                                    | "tech"
+                                    | "tools"
+                                    | "others"
+                            }
+                            key={cat}
+                            onClick={() => {
+                                setCategory(cat === category ? null : cat);
+                            }}
+                            active={cat === category}
+                        />
+                    ))}
                 </div>
             </div>
             <div
@@ -138,6 +223,8 @@ export default function History() {
                                 key={timestamp}
                                 timestamp={timestamp}
                                 items={sortedHistory[timestamp]}
+                                categoryHistory={historyCategory}
+                                category={category}
                             />
                         ))}
                         {loading && (
@@ -153,9 +240,13 @@ export default function History() {
 const DateSection = ({
     timestamp,
     items,
+    categoryHistory,
+    category,
 }: {
     timestamp: number;
     items: chrome.history.HistoryItem[];
+    categoryHistory: Record<string, string>;
+    category?: string | null;
 }) => {
     const formattedDate = useMemo(() => {
         return new Date(timestamp).toLocaleDateString([], {
@@ -177,9 +268,11 @@ const DateSection = ({
                 {formattedDate}
             </h2>
             <div className="space-y-1">
-                {sortedItems.map((item, i) => (
-                    <HistoryItem key={`${item.id}-${i}`} item={item} />
-                ))}
+                {getCategoryHistory(sortedItems, categoryHistory, category).map(
+                    (item, i) => (
+                        <HistoryItem key={`${item.id}-${i}`} item={item} />
+                    )
+                )}
             </div>
         </div>
     );
@@ -212,4 +305,22 @@ const HistoryItem = ({ item }: { item: chrome.history.HistoryItem }) => {
             <p className="flex-1 truncate">{item.title || item.url}</p>
         </a>
     );
+};
+
+const getCategoryHistory = (
+    history: chrome.history.HistoryItem[],
+    historyCategory: Record<string, string>,
+    category?: string | null
+) => {
+    if (!category || category === "all") return history;
+    return history.filter((item) => {
+        if (!item.url) return false;
+        try {
+            const url = new URL(item.url);
+            const hostname = url.hostname;
+            return historyCategory[hostname].toLocaleLowerCase() === category;
+        } catch {
+            return false;
+        }
+    });
 };

@@ -2,7 +2,8 @@ import express from "express";
 import { GoogleGenAI } from "@google/genai";
 import { config } from "dotenv";
 import { Type } from "@google/genai";
-config();
+import cors from "cors";
+config({ path: ".env.local" });
 
 const app = express();
 
@@ -28,6 +29,13 @@ You are an expert website classifier. Your task is to categorize the given websi
 )}. You must only respond with a JSON object containing the determined category.`;
 
 app.use(express.json());
+app.use(
+    cors({
+        origin: process.env.EXTENSION_ID,
+        methods: ["GET", "POST"],
+        allowedHeaders: ["Content-Type"],
+    })
+);
 
 app.post("/category", async (req, res) => {
     const { url } = req.body;
