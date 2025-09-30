@@ -13,3 +13,5 @@ A chrome extension that gives you a custom new page along with a bookmarks and h
 
 - Add option to change color
 - Add category sorting to the active tabs. 
+
+**Note** - For categorization to work you need to create a `/server` server with your own api key. 
