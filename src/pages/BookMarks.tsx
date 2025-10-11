@@ -24,15 +24,35 @@ export default function Bookmarks() {
     const [category, setCategory] = useState<string | null>();
     const processedIndexRef = useRef<number>(0);
     const isProcessingRef = useRef<boolean>(false);
+    const [bookmarkTree, setBookmarkTree] = useState<
+        chrome.bookmarks.BookmarkTreeNode[]
+    >([]);
+    // const [selected, setSelected] = useState<string | null>(null);
 
     useEffect(() => {
         chrome.runtime.sendMessage(
             {
-                action: "getBookmarks",
-                all: true,
+                action: "getTree",
             },
-            (bookmarks) => {
-                setBookmarks(bookmarks);
+            (tree) => {
+                const flatten = (
+                    nodes: chrome.bookmarks.BookmarkTreeNode[]
+                ): chrome.bookmarks.BookmarkTreeNode[] => {
+                    let result: chrome.bookmarks.BookmarkTreeNode[] = [];
+                    for (const node of nodes) {
+                        if (node.url) {
+                            result.push(node);
+                        }
+                        if (node.children) {
+                            result = result.concat(flatten(node.children));
+                        }
+                    }
+                    return result;
+                };
+                const allBookmarks = flatten(tree);
+                setBookmarkTree(tree);
+                console.log("Bookmark Tree:", bookmarkTree, tree);
+                setBookmarks(allBookmarks);
             }
         );
     }, []);
@@ -179,7 +199,7 @@ export default function Bookmarks() {
                     ))}
                 </div>
             </div>
-            <div className="ml-4 pr-8 flex-1 space-y-2 h-full flex flex-col items-center overflow-y-scroll text-lg text-white bg-gray-200/10 rounded-xl p-4">
+            <div className="mx-4 pr-8 flex-1 space-y-2 h-full flex flex-col items-center overflow-y-scroll text-lg text-white bg-gray-200/10 rounded-xl p-4">
                 {filteredBookmarks.length === 0 ? (
                     <p className="text-gray-400">
                         {bookmarks.length === 0
@@ -210,6 +230,54 @@ export default function Bookmarks() {
                     </>
                 )}
             </div>
+            <div className="w-72 h-full flex flex-col bg-gray-200/10 rounded-xl py-4 overflow-y-scroll">
+                <div className="w-full flex flex-col px-4">
+                    {bookmarkTree.map(
+                        (node: chrome.bookmarks.BookmarkTreeNode) => (
+                            <BookmarksFolders key={node.id} {...node} />
+                        )
+                    )}
+                </div>
+            </div>
         </div>
+    );
+}
+
+function BookmarksFolders(node: chrome.bookmarks.BookmarkTreeNode) {
+    return (
+        <>
+            {node.children &&
+                node.children
+                    .filter((n) => n.folderType != null)
+                    .map((folder) => (
+                        <>
+                            <div className="flex flex-col">
+                                <h3 className="text-gray-400 text-sm ml-1">
+                                    {node.folderType}
+                                </h3>
+                                <h2 className="w-full h-full flex text-lg ml-1 text-white items-center my-2 p-2 bg-gray-200/10 rounded-lg hover:scale-105 transition-transform ease-in-out duration-100">
+                                    {folder.title} (
+                                    {folder.children?.length || 0})
+                                </h2>
+                            </div>
+                        </>
+                    ))}
+            {node.children &&
+                node.children
+                    .filter((n) => n.folderType == null)
+                    .map((folder) => (
+                        <>
+                            <div className="flex flex-col">
+                                <h3 className="text-gray-400 text-sm ml-1">
+                                    {node.folderType}
+                                </h3>
+                                <h2 className="w-full h-full flex text-lg ml-1 text-white items-center my-2 p-2 bg-gray-200/10 rounded-lg hover:scale-105 transition-transform ease-in-out duration-100">
+                                    {folder.title} (
+                                    {folder.children?.length || 0})
+                                </h2>
+                            </div>
+                        </>
+                    ))}
+        </>
     );
 }

@@ -1,7 +1,9 @@
+import { FaHeart } from "react-icons/fa6";
 import Link from "./Link";
 import { useEffect, useState } from "react";
+import { defaultSites } from "../lib";
 
-type Site = {
+export type Site = {
     title: string;
     url: string;
 };
@@ -14,13 +16,6 @@ export default function QuickAccessSites() {
         if (storedSites) {
             setSites(JSON.parse(storedSites));
         } else {
-            const defaultSites = [
-                { title: "GitHub", url: "https://github.com" },
-                { title: "Gmail", url: "https://gmail.com" },
-                { title: "Discord", url: "https://discord.com" },
-                { title: "Stack Overflow", url: "https://stackoverflow.com" },
-                { title: "Reddit", url: "https://reddit.com" },
-            ];
             setSites(defaultSites);
             localStorage.setItem(
                 "quickAccessSites",
@@ -31,6 +26,8 @@ export default function QuickAccessSites() {
 
     return (
         <div className="ml-2 flex flex-col items-center justify-center h-full">
+            <FaHeart className="text-pink-400 text-4xl" />
+            <div className="border-y border-gray-300 w-8 mt-4 mb-2"></div>
             {sites.slice(0, 6).map((site) => (
                 <Link
                     key={site.url}
