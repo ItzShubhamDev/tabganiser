@@ -11,14 +11,22 @@ export default function Layout() {
     const [background, setBackground] = useState<string>("");
 
     useEffect(() => {
-        const backgroundURL = localStorage.getItem("background");
-        if (backgroundURL) {
-            setBackground(backgroundURL);
-        }
+        chrome.storage.local.get("background", (data) => {
+            if (data.background) {
+                setBackground(data.background);
+            }
+        });
     }, []);
 
     useEffect(() => {
-        localStorage.setItem("background", background);
+        chrome.storage.local.set({ background }, () => {
+            if (chrome.runtime.lastError) {
+                console.error(
+                    "Failed to save background:",
+                    chrome.runtime.lastError
+                );
+            }
+        });
     }, [background]);
 
     function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
@@ -33,7 +41,6 @@ export default function Layout() {
             reader.onload = () => {
                 if (reader.result) {
                     setBackground(reader.result as string);
-                    localStorage.setItem("background", reader.result as string);
                 }
             };
             reader.readAsDataURL(file);

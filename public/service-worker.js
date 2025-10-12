@@ -5,6 +5,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
         return true;
     } else if (request.action === "getBookmarks") {
+        if (request.parentId) {
+            chrome.bookmarks.getChildren(
+                request.parentId,
+                (bookmarkTreeNodes) => {
+                    sendResponse(bookmarkTreeNodes);
+                }
+            );
+            return true;
+        }
         chrome.bookmarks.getRecent(request.limit, (bookmarkTreeNodes) => {
             sendResponse(bookmarkTreeNodes);
         });
@@ -12,11 +21,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (request.action === "getTree") {
         chrome.bookmarks.getTree((res) => {
             sendResponse(res);
-        });
-        return true;
-    } else if (request.action === "getBookmarks" && request.parentId) {
-        chrome.bookmarks.getChildren(request.parentId, (bookmarkTreeNodes) => {
-            sendResponse(bookmarkTreeNodes);
         });
         return true;
     } else if (request.action === "getHistory") {
