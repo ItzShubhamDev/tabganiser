@@ -205,7 +205,7 @@ export default function Bookmarks() {
                 bookmark.url?.toLowerCase().includes(lowerQuery)
         );
         setQueryResults(results);
-    }, [query]);
+    }, [query, bookmarks]);
 
     return (
         <div className="flex items-center h-full px-2 pt-4 pb-2">
