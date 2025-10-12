@@ -73,7 +73,6 @@ export default function Bookmarks() {
                 { action: "getBookmarks", parentId: selected },
                 (nodes: chrome.bookmarks.BookmarkTreeNode[]) => {
                     const allBookmarks = flatten(nodes);
-                    console.log(allBookmarks);
                     setBookmarks(allBookmarks);
                 }
             );
@@ -390,6 +389,7 @@ function BookmarksFolders({
                                     "bg-gray-200/20 scale-105"
                                 }`}
                                 onClick={() => {
+                                    console.log(folder.id, selected);
                                     onClick(
                                         folder.id === selected
                                             ? null
